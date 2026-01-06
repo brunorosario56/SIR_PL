@@ -5,3 +5,4 @@ classmate-sync-api/.env.local
 classmate-sync-api/npm-debug.log*
 
 
+.DS_Store
