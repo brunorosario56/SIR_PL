@@ -4,6 +4,11 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import http from 'http';
 import { Server } from 'socket.io';
+import authRoutes from './routes/authRoutes.js';
+import scheduleRoutes from './routes/scheduleRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+
+
 
 dotenv.config();
 
@@ -17,9 +22,16 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+app.use('/auth', authRoutes);
+app.use('/schedules', scheduleRoutes);
+app.use('/users', userRoutes);
+
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/classmate_sync';
 
