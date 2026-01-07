@@ -35,6 +35,7 @@ router.post('/register', async (req, res) => {
     // opcional: não devolver o hash
     const userData = {
       id: user._id,
+      _id: user._id,
       nome: user.nome,
       email: user.email,
     };
@@ -73,6 +74,7 @@ router.post('/login', async (req, res) => {
 
     const userData = {
       id: user._id,
+      _id: user._id,
       nome: user.nome,
       email: user.email,
     };
@@ -99,6 +101,7 @@ router.get('/me', authMiddleware, async (req, res) => {
 
     return res.json({
       id: user._id,
+      _id: user._id,
       nome: user.nome,
       email: user.email,
     });

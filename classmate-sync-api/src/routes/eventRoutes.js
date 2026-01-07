@@ -29,6 +29,7 @@ router.get('/me', authMiddleware, async (req, res) => {
 
     const mapped = events.map((e) => ({
       id: e._id,
+      _id: e._id,
       group: e.group,
       criador: e.criador,
       titulo: e.titulo,

@@ -48,6 +48,7 @@ router.post('/me/colegas', authMiddleware, async (req, res) => {
       message: 'Colega adicionado com sucesso.',
       colega: {
         id: colega._id,
+        _id: colega._id,
         nome: colega.nome,
         email: colega.email,
       },

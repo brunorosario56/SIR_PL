@@ -34,6 +34,7 @@ router.post('/', authMiddleware, async (req, res) => {
       message: 'Grupo criado com sucesso.',
       group: {
         id: group._id,
+        _id: group._id,
         nome: group.nome,
         descricao: group.descricao,
         owner: group.owner,
@@ -115,6 +116,7 @@ router.post('/:id/members', authMiddleware, async (req, res) => {
       message: 'Membros adicionados com sucesso.',
       group: {
         id: group._id,
+        _id: group._id,
         membros: group.membros,
       },
     });
@@ -136,6 +138,7 @@ router.get('/me', authMiddleware, async (req, res) => {
 
     const mapped = groups.map((g) => ({
       id: g._id,
+      _id: g._id,
       nome: g.nome,
       descricao: g.descricao,
       owner: g.owner,
@@ -256,6 +259,7 @@ router.post('/:id/events', authMiddleware, async (req, res) => {
 
     return res.status(201).json({
       id: event._id,
+      _id: event._id,
       group: event.group,
       criador: event.criador,
       titulo: event.titulo,
@@ -300,6 +304,7 @@ router.get('/:id/events', authMiddleware, async (req, res) => {
 
     const mapped = events.map((e) => ({
       id: e._id,
+      _id: e._id,
       group: e.group,
       criador: e.criador,
       titulo: e.titulo,

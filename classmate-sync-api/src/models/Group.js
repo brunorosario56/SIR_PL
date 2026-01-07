@@ -24,7 +24,7 @@ groupSchema.pre('validate', function ensureOwnerAndUniqueMembers(next) {
   const unique = [...new Set(this.membros.map((id) => id.toString()))];
   this.membros = unique.map((id) => new mongoose.Types.ObjectId(id));
 
-  next();
+  if (typeof next === 'function') next();
 });
 
 groupSchema.path('membros').validate(function validateOwnerIsMember(membros) {
