@@ -1,57 +1,74 @@
-import { ReactNode } from "react";
-import { useAuth } from "../auth/AuthContext";
-import { Button, Pill } from "./ui";
+import type { ReactNode } from "react";
 
-export type NavKey = "dashboard" | "schedule" | "groups" | "colegas";
+/**
+ * Todas as views possíveis da app
+ */
+export type NavKey =
+  | "dashboard"
+  | "schedule"
+  | "groups"
+  | "colegas";
 
-type Props = {
-	active: NavKey;
-	onChange: (key: NavKey) => void;
-	children: ReactNode;
+/**
+ * Props do AppShell
+ */
+type AppShellProps = {
+  active: NavKey;
+  onChange: (key: NavKey) => void;
+  children: ReactNode;
 };
 
-const navItems: { key: NavKey; label: string }[] = [
-	{ key: "dashboard", label: "Dashboard" },
-	{ key: "schedule", label: "Horário" },
-	{ key: "groups", label: "Grupos" },
-	{ key: "colegas", label: "Colegas" },
-];
 
-export default function AppShell({ active, onChange, children }: Props) {
-	const { user, logout } = useAuth();
+export default function AppShell({
+  active,
+  onChange,
+  children,
+}: AppShellProps) {
+  return (
+    <div className="flex min-h-screen bg-neutral-950 text-white">
+      {/* Sidebar */}
+      <aside className="w-56 border-r border-white/10 p-4">
+        <div className="text-lg font-semibold mb-4">Classmate</div>
 
-	return (
-		<div className="min-h-screen bg-black text-white">
-			<header className="border-b border-white/10 bg-black/60 backdrop-blur">
-				<div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-					<div className="flex items-center gap-3">
-						<div className="text-lg font-semibold">Classmate Sync</div>
-						{user && <Pill>{user.email}</Pill>}
-					</div>
+        <nav className="space-y-1">
+          <NavItem label="Dashboard" active={active === "dashboard"} onClick={() => onChange("dashboard")} />
+          <NavItem label="Horário" active={active === "schedule"} onClick={() => onChange("schedule")} />
+          <NavItem label="Grupos" active={active === "groups"} onClick={() => onChange("groups")} />
+          <NavItem label="Colegas" active={active === "colegas"} onClick={() => onChange("colegas")} />
+        </nav>
+      </aside>
 
-					<div className="flex items-center gap-2">
-						{navItems.map((item) => (
-							<button
-								key={item.key}
-								onClick={() => onChange(item.key)}
-								className={`rounded-xl px-3 py-2 text-sm transition border ${
-									active === item.key
-										? "border-white bg-white text-black"
-										: "border-white/10 text-white hover:bg-white/10"
-								}`}
-							>
-								{item.label}
-							</button>
-						))}
+      {/* Conteúdo */}
+      <main className="flex-1 p-6 overflow-y-auto">
+        {children}
+      </main>
+    </div>
+  );
+}
 
-						<Button variant="ghost" onClick={logout}>
-							Sair
-						</Button>
-					</div>
-				</div>
-			</header>
-
-			<main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
-		</div>
-	);
+/**
+ * Item da sidebar
+ */
+function NavItem({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        "w-full text-left px-3 py-2 rounded-lg transition",
+        active
+          ? "bg-indigo-500/20 text-indigo-200"
+          : "hover:bg-white/10 text-white/80",
+      ].join(" ")}
+    >
+      {label}
+    </button>
+  );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import AppShell, { NavKey } from "../components/AppShell";
+import AppShell, { type NavKey } from "../components/AppShell";
 import { Card, Pill } from "../components/ui";
 import { useAuth } from "../auth/AuthContext";
 import { usePresence } from "../hooks/usePresence";

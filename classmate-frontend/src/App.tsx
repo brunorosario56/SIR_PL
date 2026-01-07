@@ -1,9 +1,10 @@
+import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
 
-function Private({ children }: { children: JSX.Element }) {
+function Private({ children }: { children: React.ReactElement }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="p-6">A carregar…</div>;
   if (!user) return <Navigate to="/login" replace />;

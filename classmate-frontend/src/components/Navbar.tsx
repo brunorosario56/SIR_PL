@@ -24,7 +24,7 @@ export function Navbar() {
             <NavLink className="text-sm" to="/colleagues">Colegas</NavLink>
 
             <span className="text-xs text-gray-600 hidden sm:inline">
-              {user.email || user.username || "Utilizador"}
+              {user.email || user.nome || "Utilizador"}
             </span>
 
             <button
