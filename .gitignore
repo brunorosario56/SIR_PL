@@ -1,117 +1,25 @@
-# =========================
-# Dependencies
-# =========================
-node_modules/
-.pnp/
-.pnp.js
-
-# =========================
-# Build outputs
-# =========================
-dist/
-build/
-.out/
-.next/
-coverage/
-
-# =========================
-# Environment variables
-# =========================
-.env
-.env.local
-.env.development
-.env.development.local
-.env.test
-.env.test.local
-.env.production
-.env.production.local
-
-# =========================
 # Logs
-# =========================
+logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-logs/
-*.log
+lerna-debug.log*
 
-# =========================
-# Runtime data
-# =========================
-pids/
-*.pid
-*.seed
-*.pid.lock
+node_modules
+dist
+dist-ssr
+*.local
 
-# =========================
-# Cache
-# =========================
-.cache/
-.parcel-cache/
-.eslintcache
-.vite/
-.vite-cache/
-
-# =========================
-# Editor / IDE files
-# =========================
-.vscode/
-.idea/
-*.swp
-*.swo
-*.swn
-*.orig
-*.bak
-
-# =========================
-# OS files
-# =========================
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
-.DS_Store?
-._*
-Thumbs.db
-ehthumbs.db
-Icon?
-
-# =========================
-# TypeScript
-# =========================
-*.tsbuildinfo
-
-# =========================
-# Testing
-# =========================
-/coverage
-/playwright-report/
-/test-results/
-
-# =========================
-# Storybook
-# =========================
-storybook-static/
-
-# =========================
-# Misc
-# =========================
-*.tgz
-*.zip
-*.tar.gz
-
-# =========================
-# Firebase
-# =========================
-.firebase/
-.firebaserc
-
-# =========================
-# Netlify / Vercel
-# =========================
-.netlify/
-.vercel/
-
-# =========================
-# Local config overrides
-# =========================
-*.local.*
-
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.env
