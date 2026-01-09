@@ -2,9 +2,9 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen grid place-items-center">
         <div className="text-sm text-gray-600">A carregar...</div>
@@ -15,4 +15,3 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
-

@@ -15,6 +15,7 @@ export type NavKey =
 type AppShellProps = {
   active: NavKey;
   onChange: (key: NavKey) => void;
+  onLogout?: () => void;
   children: ReactNode;
 };
 
@@ -22,6 +23,7 @@ type AppShellProps = {
 export default function AppShell({
   active,
   onChange,
+  onLogout,
   children,
 }: AppShellProps) {
   return (
@@ -36,6 +38,17 @@ export default function AppShell({
           <NavItem label="Grupos" active={active === "groups"} onClick={() => onChange("groups")} />
           <NavItem label="Colegas" active={active === "colegas"} onClick={() => onChange("colegas")} />
         </nav>
+
+        {onLogout && (
+          <div className="mt-6">
+            <button
+              onClick={onLogout}
+              className="w-full rounded-lg border border-white/15 px-3 py-2 text-sm text-white/80 hover:bg-white/10 transition"
+            >
+              Terminar sessão
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* Conteúdo */}

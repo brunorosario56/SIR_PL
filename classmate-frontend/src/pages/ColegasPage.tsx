@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { addColega, getMyColegas } from "../api/endpoints";
-import type { PresenceEntry, User } from "../api/types";
+import type { User } from "../api/types";
 import { Button, Card, Input, Label, Pill } from "../components/ui";
+import type { AppOutletContext } from "../App";
 
-export default function ColegasPage({ presence }: { presence: Record<string, PresenceEntry> }) {
+export default function ColegasPage() {
+  const { presence } = useOutletContext<AppOutletContext>();
   const [colegas, setColegas] = useState<User[]>([]);
   const [email, setEmail] = useState("");
   const [err, setErr] = useState<string | null>(null);
