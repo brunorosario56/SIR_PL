@@ -10,6 +10,7 @@ import scheduleRoutes from './routes/scheduleRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
+import friendRequestRoutes from './routes/friendRequestRoutes.js';
 
 
 
@@ -41,6 +42,7 @@ app.use('/schedules', scheduleRoutes);
 app.use('/users', userRoutes);
 app.use('/groups', groupRoutes);
 app.use('/events', eventRoutes);
+app.use('/friend-requests', friendRequestRoutes);
 
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/classmate_sync';

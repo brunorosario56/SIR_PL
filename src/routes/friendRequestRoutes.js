@@ -6,93 +6,10 @@ import { authMiddleware } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-/**
- * POST /users/me/colegas
- * Body: { "email": "colega@example.com" }
- * Adiciona um colega à lista do utilizador autenticado.
- */
-router.post('/me/colegas', authMiddleware, async (req, res) => {
+// Cria um pedido de amizade
+router.post('/', authMiddleware, async (req, res) => {
   try {
     const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ message: 'Email do colega é obrigatório.' });
-    }
-
-    // user autenticado
-    const user = await User.findById(req.userId);
-    if (!user) {
-      return res.status(404).json({ message: 'Utilizador atual não encontrado.' });
-    }
-
-    // não pode adicionar ele próprio como colega
-    if (user.email === email) {
-      return res.status(400).json({ message: 'Não podes adicionar-te a ti próprio como colega.' });
-    }
-
-    // procurar o colega pelo email
-    const colega = await User.findOne({ email });
-    if (!colega) {
-      return res.status(404).json({ message: 'Colega com esse email não existe.' });
-    }
-
-    // ver se já está na lista
-    const jaExiste = user.colegas.some((id) => id.equals(colega._id));
-    if (jaExiste) {
-      return res.status(409).json({ message: 'Esse colega já está na tua lista.' });
-    }
-
-    // adicionar colega (apenas de um lado para já; se quiseres recíproco, adicionas nos dois)
-    user.colegas.push(colega._id);
-    await user.save();
-
-    return res.status(201).json({
-      message: 'Colega adicionado com sucesso.',
-      colega: {
-        id: colega._id,
-        _id: colega._id,
-        nome: colega.nome,
-        email: colega.email,
-      },
-    });
-  } catch (err) {
-    console.error('Erro no POST /users/me/colegas:', err);
-    return res.status(500).json({ message: 'Erro ao adicionar colega.' });
-  }
-});
-
-/**
- * GET /users/me/colegas
- * Devolve a lista de colegas (id, nome, email).
- */
-router.get('/me/colegas', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId)
-      .populate('colegas', '_id nome email') // "join" com a coleção de users
-      .lean();
-
-    if (!user) {
-      return res.status(404).json({ message: 'Utilizador não encontrado.' });
-    }
-
-    return res.json({
-      colegas: user.colegas || [],
-    });
-  } catch (err) {
-    console.error('Erro no GET /users/me/colegas:', err);
-    return res.status(500).json({ message: 'Erro ao obter colegas.' });
-  }
-});
-
-/**
- * POST /users/me/colegas/requests
- * Body: { "email": "colega@example.com" }
- * Cria um pedido de amizade para outro utilizador (pendente até ser aceite/rejeitado).
- */
-router.post('/me/colegas/requests', authMiddleware, async (req, res) => {
-  try {
-    const { email } = req.body;
-
     if (!email) {
       return res.status(400).json({ message: 'Email do colega é obrigatório.' });
     }
@@ -148,16 +65,13 @@ router.post('/me/colegas/requests', authMiddleware, async (req, res) => {
       alvo: { id: target._id, _id: target._id, nome: target.nome, email: target.email },
     });
   } catch (err) {
-    console.error('Erro no POST /users/me/colegas/requests:', err);
+    console.error('Erro no POST /friend-requests:', err);
     return res.status(500).json({ message: 'Erro ao criar pedido de amizade.' });
   }
 });
 
-/**
- * GET /users/me/colegas/requests
- * Lista pedidos de amizade pendentes (entradas e saídas).
- */
-router.get('/me/colegas/requests', authMiddleware, async (req, res) => {
+// Lista pedidos pendentes (entrantes e saíntes)
+router.get('/', authMiddleware, async (req, res) => {
   try {
     const [incoming, outgoing] = await Promise.all([
       FriendRequest.find({ to: req.userId, status: 'pending' }).populate('from', '_id nome email'),
@@ -184,16 +98,13 @@ router.get('/me/colegas/requests', authMiddleware, async (req, res) => {
       })),
     });
   } catch (err) {
-    console.error('Erro no GET /users/me/colegas/requests:', err);
+    console.error('Erro no GET /friend-requests:', err);
     return res.status(500).json({ message: 'Erro ao obter pedidos de amizade.' });
   }
 });
 
-/**
- * POST /users/me/colegas/requests/:id/accept
- * Aceita um pedido de amizade recebido e adiciona ambos como colegas.
- */
-router.post('/me/colegas/requests/:id/accept', authMiddleware, async (req, res) => {
+// Aceita um pedido
+router.post('/:id/accept', authMiddleware, async (req, res) => {
   try {
     const request = await FriendRequest.findById(req.params.id);
 
@@ -237,16 +148,78 @@ router.post('/me/colegas/requests/:id/accept', authMiddleware, async (req, res) 
       colega: { id: requester._id, _id: requester._id, nome: requester.nome, email: requester.email },
     });
   } catch (err) {
-    console.error('Erro no POST /users/me/colegas/requests/:id/accept:', err);
+    console.error('Erro no POST /friend-requests/:id/accept:', err);
     return res.status(500).json({ message: 'Erro ao aceitar pedido de amizade.' });
   }
 });
 
-/**
- * POST /users/me/colegas/requests/:id/reject
- * Rejeita um pedido de amizade recebido.
- */
-router.post('/me/colegas/requests/:id/reject', authMiddleware, async (req, res) => {
+// Alias para aceitar/rejeitar num único endpoint com { decision: 'accept' | 'reject' }
+router.post('/:id/respond', authMiddleware, async (req, res) => {
+  try {
+    const { decision } = req.body || {};
+
+    if (!decision || !['accept', 'reject'].includes(decision)) {
+      return res.status(400).json({ message: "decision deve ser 'accept' ou 'reject'." });
+    }
+
+    const request = await FriendRequest.findById(req.params.id);
+
+    if (!request) {
+      return res.status(404).json({ message: 'Pedido de amizade não encontrado.' });
+    }
+
+    if (!request.to.equals(req.userId)) {
+      return res
+        .status(403)
+        .json({ message: 'Não podes responder a pedidos de outros utilizadores.' });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(409).json({ message: 'Este pedido já foi processado.' });
+    }
+
+    if (decision === 'reject') {
+      request.status = 'rejected';
+      await request.save();
+      return res.json({ message: 'Pedido rejeitado.' });
+    }
+
+    // accept
+    request.status = 'accepted';
+    await request.save();
+
+    const [currentUser, requester] = await Promise.all([
+      User.findById(req.userId),
+      User.findById(request.from),
+    ]);
+
+    if (!currentUser || !requester) {
+      return res.status(404).json({ message: 'Utilizador envolvido no pedido não existe.' });
+    }
+
+    const currentSet = new Set(currentUser.colegas.map((id) => id.toString()));
+    const requesterSet = new Set(requester.colegas.map((id) => id.toString()));
+
+    currentSet.add(requester._id.toString());
+    requesterSet.add(currentUser._id.toString());
+
+    currentUser.colegas = Array.from(currentSet).map((id) => new mongoose.Types.ObjectId(id));
+    requester.colegas = Array.from(requesterSet).map((id) => new mongoose.Types.ObjectId(id));
+
+    await Promise.all([currentUser.save(), requester.save()]);
+
+    return res.json({
+      message: 'Pedido aceite. Colegas adicionados mutuamente.',
+      colega: { id: requester._id, _id: requester._id, nome: requester.nome, email: requester.email },
+    });
+  } catch (err) {
+    console.error('Erro no POST /friend-requests/:id/respond:', err);
+    return res.status(500).json({ message: 'Erro ao responder ao pedido de amizade.' });
+  }
+});
+
+// Rejeita um pedido
+router.post('/:id/reject', authMiddleware, async (req, res) => {
   try {
     const request = await FriendRequest.findById(req.params.id);
 
@@ -267,7 +240,7 @@ router.post('/me/colegas/requests/:id/reject', authMiddleware, async (req, res) 
 
     return res.json({ message: 'Pedido rejeitado.' });
   } catch (err) {
-    console.error('Erro no POST /users/me/colegas/requests/:id/reject:', err);
+    console.error('Erro no POST /friend-requests/:id/reject:', err);
     return res.status(500).json({ message: 'Erro ao rejeitar pedido de amizade.' });
   }
 });
