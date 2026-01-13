@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema(
     nome: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
+    avatar: { type: String, default: null },
     colegas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     grupos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Group' }],
   },

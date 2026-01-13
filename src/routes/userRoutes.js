@@ -272,4 +272,111 @@ router.post('/me/colegas/requests/:id/reject', authMiddleware, async (req, res) 
   }
 });
 
+/**
+ * DELETE /users/me/colegas/requests/:id
+ * Cancela um pedido de amizade enviado (pendente).
+ */
+router.delete('/me/colegas/requests/:id', authMiddleware, async (req, res) => {
+  try {
+    const request = await FriendRequest.findById(req.params.id);
+
+    if (!request) {
+      return res.status(404).json({ message: 'Pedido de amizade não encontrado.' });
+    }
+
+    if (!request.from.equals(req.userId)) {
+      return res.status(403).json({ message: 'Não podes cancelar pedidos de outros utilizadores.' });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(409).json({ message: 'Este pedido já foi processado.' });
+    }
+
+    await FriendRequest.findByIdAndDelete(req.params.id);
+
+    return res.json({ message: 'Pedido cancelado.' });
+  } catch (err) {
+    console.error('Erro no DELETE /users/me/colegas/requests/:id:', err);
+    return res.status(500).json({ message: 'Erro ao cancelar pedido de amizade.' });
+  }
+});
+
+/**
+ * DELETE /users/me/colegas/:id
+ * Remove um colega da lista do utilizador autenticado.
+ */
+router.delete('/me/colegas/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'ID inválido.' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Utilizador não encontrado.' });
+    }
+
+    const wasColega = user.colegas.some((colegaId) => colegaId.equals(id));
+    if (!wasColega) {
+      return res.status(404).json({ message: 'Esse utilizador não está na tua lista de colegas.' });
+    }
+
+    // Remove de ambos os lados
+    user.colegas = user.colegas.filter((colegaId) => !colegaId.equals(id));
+    await user.save();
+
+    const otherUser = await User.findById(id);
+    if (otherUser) {
+      otherUser.colegas = otherUser.colegas.filter((colegaId) => !colegaId.equals(req.userId));
+      await otherUser.save();
+    }
+
+    return res.json({ message: 'Colega removido com sucesso.' });
+  } catch (err) {
+    console.error('Erro no DELETE /users/me/colegas/:id:', err);
+    return res.status(500).json({ message: 'Erro ao remover colega.' });
+  }
+});
+
+/**
+ * GET /users/:id/schedule
+ * Devolve o horário de um colega (apenas se forem colegas).
+ */
+router.get('/:id/schedule', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: 'ID inválido.' });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Utilizador não encontrado.' });
+    }
+
+    const isColega = user.colegas.some((colegaId) => colegaId.equals(id));
+    if (!isColega && id !== req.userId) {
+      return res.status(403).json({ message: 'Só podes ver horários dos teus colegas.' });
+    }
+
+    const Schedule = (await import('../models/Schedule.js')).default;
+    const schedule = await Schedule.findOne({ user: id }).lean();
+
+    if (!schedule) {
+      return res.json({ user: id, blocos: [] });
+    }
+
+    return res.json({
+      user: schedule.user,
+      blocos: schedule.blocos,
+    });
+  } catch (err) {
+    console.error('Erro no GET /users/:id/schedule:', err);
+    return res.status(500).json({ message: 'Erro ao obter horário.' });
+  }
+});
+
 export default router;

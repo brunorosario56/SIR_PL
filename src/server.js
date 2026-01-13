@@ -20,7 +20,10 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: '*' },
+  cors: { 
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    credentials: true 
+  },
 });
 
 // Presença online (em memória)
@@ -28,7 +31,12 @@ const io = new Server(server, {
 // value: { sockets: Set<string>, lastSeen: Date }
 const onlineUsers = new Map();
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 

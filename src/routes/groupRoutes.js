@@ -133,6 +133,8 @@ router.post('/:id/members', authMiddleware, async (req, res) => {
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const groups = await Group.find({ membros: req.userId })
+      .populate('owner', '_id nome email')
+      .populate('membros', '_id nome email')
       .select('_id nome descricao owner membros')
       .lean();
 
@@ -164,17 +166,17 @@ router.get('/:id/slots', authMiddleware, async (req, res) => {
       return badRequest(res, 'Dados inválidos.', ['id inválido']);
     }
 
-    const group = await Group.findById(id);
+    const group = await Group.findById(id).populate('membros', '_id nome email');
     if (!group) {
       return notFound(res, 'Grupo não encontrado.');
     }
 
-    const isMember = group.membros.some((m) => m.equals(req.userId));
+    const isMember = group.membros.some((m) => m._id.equals(req.userId));
     if (!isMember) {
       return forbidden(res, 'Só membros do grupo podem ver os slots.');
     }
 
-    const memberIds = group.membros;
+    const memberIds = group.membros.map(m => m._id);
 
     const schedules = await Schedule.find({ user: { $in: memberIds } })
       .select('user blocos')
@@ -190,6 +192,7 @@ router.get('/:id/slots', authMiddleware, async (req, res) => {
     return res.json({
       groupId: group._id,
       slots,
+      membros: group.membros,
     });
   } catch (err) {
     console.error('Erro no GET /groups/:id/slots:', err);
@@ -319,6 +322,237 @@ router.get('/:id/events', authMiddleware, async (req, res) => {
     return res.json(mapped);
   } catch (err) {
     console.error('Erro no GET /groups/:id/events:', err);
+    return serverError(res, 'Erro interno do servidor.');
+  }
+});
+
+/**
+ * PUT /groups/:groupId/events/:eventId
+ * Edita um evento de estudo (apenas o criador ou owner do grupo pode editar).
+ */
+router.put('/:groupId/events/:eventId', authMiddleware, async (req, res) => {
+  try {
+    const { groupId, eventId } = req.params;
+
+    if (!mongoose.isValidObjectId(groupId) || !mongoose.isValidObjectId(eventId)) {
+      return badRequest(res, 'Dados inválidos.', ['groupId ou eventId inválido']);
+    }
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return notFound(res, 'Grupo não encontrado.');
+    }
+
+    const isMember = group.membros.some((m) => m.equals(req.userId));
+    if (!isMember) {
+      return forbidden(res, 'Só membros do grupo podem editar eventos.');
+    }
+
+    const event = await StudyEvent.findById(eventId);
+    if (!event) {
+      return notFound(res, 'Evento não encontrado.');
+    }
+
+    if (!event.group.equals(groupId)) {
+      return badRequest(res, 'Este evento não pertence ao grupo.');
+    }
+
+    const isCreator = event.criador.equals(req.userId);
+    const isOwner = group.owner.equals(req.userId);
+    if (!isCreator && !isOwner) {
+      return forbidden(res, 'Só o criador ou o owner do grupo podem editar o evento.');
+    }
+
+    const { titulo, descricao, inicio, fim, local } = req.body;
+
+    if (titulo !== undefined) {
+      if (!titulo || typeof titulo !== 'string' || titulo.trim().length === 0) {
+        return badRequest(res, 'Titulo inválido.');
+      }
+      event.titulo = titulo;
+    }
+
+    if (descricao !== undefined) {
+      event.descricao = descricao;
+    }
+
+    if (inicio !== undefined) {
+      const inicioDate = new Date(inicio);
+      if (Number.isNaN(inicioDate.getTime())) {
+        return badRequest(res, 'Data de início inválida.');
+      }
+      event.inicio = inicioDate;
+    }
+
+    if (fim !== undefined) {
+      const fimDate = new Date(fim);
+      if (Number.isNaN(fimDate.getTime())) {
+        return badRequest(res, 'Data de fim inválida.');
+      }
+      event.fim = fimDate;
+    }
+
+    if (event.inicio >= event.fim) {
+      return badRequest(res, 'Inicio deve ser anterior a fim.');
+    }
+
+    if (local !== undefined) {
+      event.local = local;
+    }
+
+    await event.save();
+
+    return res.json({
+      id: event._id,
+      _id: event._id,
+      group: event.group,
+      criador: event.criador,
+      titulo: event.titulo,
+      descricao: event.descricao,
+      inicio: event.inicio,
+      fim: event.fim,
+      local: event.local,
+      createdAt: event.createdAt,
+      updatedAt: event.updatedAt,
+    });
+  } catch (err) {
+    console.error('Erro no PUT /groups/:groupId/events/:eventId:', err);
+    return serverError(res, 'Erro interno do servidor.');
+  }
+});
+
+/**
+ * DELETE /groups/:groupId/events/:eventId
+ * Apaga um evento de estudo (apenas o criador ou owner do grupo pode apagar).
+ */
+router.delete('/:groupId/events/:eventId', authMiddleware, async (req, res) => {
+  try {
+    const { groupId, eventId } = req.params;
+
+    if (!mongoose.isValidObjectId(groupId) || !mongoose.isValidObjectId(eventId)) {
+      return badRequest(res, 'Dados inválidos.', ['groupId ou eventId inválido']);
+    }
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return notFound(res, 'Grupo não encontrado.');
+    }
+
+    const isMember = group.membros.some((m) => m.equals(req.userId));
+    if (!isMember) {
+      return forbidden(res, 'Só membros do grupo podem apagar eventos.');
+    }
+
+    const event = await StudyEvent.findById(eventId);
+    if (!event) {
+      return notFound(res, 'Evento não encontrado.');
+    }
+
+    if (!event.group.equals(groupId)) {
+      return badRequest(res, 'Este evento não pertence ao grupo.');
+    }
+
+    const isCreator = event.criador.equals(req.userId);
+    const isOwner = group.owner.equals(req.userId);
+    if (!isCreator && !isOwner) {
+      return forbidden(res, 'Só o criador ou o owner do grupo podem apagar o evento.');
+    }
+
+    await StudyEvent.findByIdAndDelete(eventId);
+
+    return res.json({ message: 'Evento apagado com sucesso.' });
+  } catch (err) {
+    console.error('Erro no DELETE /groups/:groupId/events/:eventId:', err);
+    return serverError(res, 'Erro interno do servidor.');
+  }
+});
+
+/**
+ * DELETE /groups/:id/leave
+ * Sai do grupo (remove o utilizador dos membros). Se for o owner, transfere ownership ou apaga o grupo.
+ */
+router.delete('/:id/leave', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return badRequest(res, 'Dados inválidos.', ['id inválido']);
+    }
+
+    const group = await Group.findById(id);
+    if (!group) {
+      return notFound(res, 'Grupo não encontrado.');
+    }
+
+    const isMember = group.membros.some((m) => m.equals(req.userId));
+    if (!isMember) {
+      return badRequest(res, 'Não és membro deste grupo.');
+    }
+
+    // Se for o owner
+    if (group.owner.equals(req.userId)) {
+      // Se houver outros membros, transfere ownership para o próximo
+      const otherMembers = group.membros.filter((m) => !m.equals(req.userId));
+      if (otherMembers.length > 0) {
+        group.owner = otherMembers[0];
+        group.membros = otherMembers;
+        await group.save();
+        return res.json({ message: 'Saíste do grupo. Ownership transferido.' });
+      } else {
+        // Se for o único membro, apaga o grupo
+        await Group.findByIdAndDelete(id);
+        await StudyEvent.deleteMany({ group: id });
+        return res.json({ message: 'Grupo apagado (eras o único membro).' });
+      }
+    }
+
+    // Se não for o owner, apenas remove dos membros
+    group.membros = group.membros.filter((m) => !m.equals(req.userId));
+    await group.save();
+
+    return res.json({ message: 'Saíste do grupo.' });
+  } catch (err) {
+    console.error('Erro no DELETE /groups/:id/leave:', err);
+    return serverError(res, 'Erro interno do servidor.');
+  }
+});
+
+/**
+ * DELETE /groups/:id/members/:memberId
+ * Remove um membro do grupo (apenas o owner pode fazer isso).
+ */
+router.delete('/:id/members/:memberId', authMiddleware, async (req, res) => {
+  try {
+    const { id, memberId } = req.params;
+
+    if (!mongoose.isValidObjectId(id) || !mongoose.isValidObjectId(memberId)) {
+      return badRequest(res, 'Dados inválidos.', ['id ou memberId inválido']);
+    }
+
+    const group = await Group.findById(id);
+    if (!group) {
+      return notFound(res, 'Grupo não encontrado.');
+    }
+
+    if (!group.owner.equals(req.userId)) {
+      return forbidden(res, 'Só o owner pode remover membros.');
+    }
+
+    if (group.owner.equals(memberId)) {
+      return badRequest(res, 'Não podes remover o owner do grupo.');
+    }
+
+    const wasMember = group.membros.some((m) => m.equals(memberId));
+    if (!wasMember) {
+      return badRequest(res, 'Esse utilizador não é membro do grupo.');
+    }
+
+    group.membros = group.membros.filter((m) => !m.equals(memberId));
+    await group.save();
+
+    return res.json({ message: 'Membro removido com sucesso.' });
+  } catch (err) {
+    console.error('Erro no DELETE /groups/:id/members/:memberId:', err);
     return serverError(res, 'Erro interno do servidor.');
   }
 });
