@@ -20,9 +20,9 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { 
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
-    credentials: true 
+  cors: {
+    origin: '*',
+    credentials: true
   },
 });
 
@@ -32,7 +32,7 @@ const io = new Server(server, {
 const onlineUsers = new Map();
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -60,8 +60,8 @@ mongoose
   .then(() => {
     console.log('MongoDB ligado');
     const PORT = process.env.PORT || 3000;
-    server.listen(PORT, () => {
-      console.log(`API a correr em http://localhost:${PORT}`);
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`API a correr em http://0.0.0.0:${PORT}`);
     });
   })
   .catch((err) => {
