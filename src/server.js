@@ -19,9 +19,16 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
+const allowedOrigins = [
+  'https://classmate-sync.maruqes.com',
+  'https://classmate-sync-api.maruqes.com',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: allowedOrigins,
     credentials: true
   },
 });
@@ -32,7 +39,7 @@ const io = new Server(server, {
 const onlineUsers = new Map();
 
 app.use(cors({
-  origin: '*',
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
